@@ -14,3 +14,4 @@ with DAG(
         task_id="dizer_ola",
         bash_command="echo 'Olá do Airflow'",
     )
+
