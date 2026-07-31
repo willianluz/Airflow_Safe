@@ -10,8 +10,5 @@ with DAG(
     tags=["teste"],
 ) as dag:
 
-    tarefa = BashOperator(
-        task_id="dizer_ola",
-        bash_command="echo 'Olá do Airflow'",
-    )
+    tarefa = BashOperator(task_id="dizer_ola", bash_command="echo 'Olá do Airflow'",)
 
