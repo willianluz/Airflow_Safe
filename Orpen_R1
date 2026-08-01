@@ -1,0 +1,14 @@
+from airflow.hooks.base import BaseHook
+import pyodbc
+
+def get_conn():
+    c = BaseHook.get_connection("PN3PSFWBI01")   # o ID da sua Connection
+    conn_str = (
+        "DRIVER={ODBC Driver 18 for SQL Server};"
+        f"SERVER={c.host};"
+        f"DATABASE={c.schema};"
+        f"UID={c.login};"
+        f"PWD={c.password};"
+        "Encrypt=yes;TrustServerCertificate=yes;"
+    )
+    return pyodbc.connect(conn_str)
