@@ -58,7 +58,7 @@ def get_conn_dw_safepar() -> pyodbc.Connection:
     Cria e retorna uma conexão com o DW_SAFEPAR.
     """
     conn_str = (
-        "DRIVER={ODBC Driver 17 for SQL Server};"
+        "DRIVER={ODBC Driver 18 for SQL Server};"
         "SERVER=P-N3P-SFW-BI01;"
         "DATABASE=DW_SAFEPAR;"
         "UID=s_coleta_dw;"
