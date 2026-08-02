@@ -42,10 +42,14 @@ def _get_orpen_config():
 
 
 def _periodo_mes():
-    """Retorna (primeiro_dia, ultimo_dia) do mês atual."""
+    """
+    Retorna (primeiro_dia, ultimo_dia) do período a processar.
+    Início = dia 1 do mês. Fim = HOJE (não busca dias futuros do mês,
+    que ainda não têm atendimentos e fariam a API retornar vazio).
+    """
     hoje = datetime.today()
     inicio = hoje.replace(day=1)
-    fim = hoje.replace(day=calendar.monthrange(hoje.year, hoje.month)[1])
+    fim = hoje   # até hoje, não até o fim do mês
     return inicio, fim
 
 
@@ -102,20 +106,25 @@ def extrair_e_carregar():
                 else:
                     d = {}
 
-                linhas_dia = []
-                for pessoa, eventos in d.items():
-                    for ev in eventos:
-                        linhas_dia.append({
-                            **ev,
-                            "Pessoa": pessoa,
-                            "Data_Consulta": data_atual.date(),
-                        })
+                # se depois de normalizar 'd' não for um dicionário
+                # (ex.: dia sem atendimento vem como lista vazia), pula o dia
+                if not isinstance(d, dict):
+                    print("  sem atendimentos nessa data.")
+                else:
+                    linhas_dia = []
+                    for pessoa, eventos in d.items():
+                        for ev in eventos:
+                            linhas_dia.append({
+                                **ev,
+                                "Pessoa": pessoa,
+                                "Data_Consulta": data_atual.date(),
+                            })
 
-                if linhas_dia:
-                    df = pd.DataFrame(linhas_dia)
-                    utils.inserir_staging(df, conn, TABELA)
-                    total_inserido += len(df)
-                    print(f"  {len(df)} linhas inseridas.")
+                    if linhas_dia:
+                        df = pd.DataFrame(linhas_dia)
+                        utils.inserir_staging(df, conn, TABELA)
+                        total_inserido += len(df)
+                        print(f"  {len(df)} linhas inseridas.")
 
         except Exception as e:
             # não derruba a DAG por causa de 1 dia — registra e segue
@@ -138,14 +147,14 @@ def extrair_e_carregar():
 # DEFINIÇÃO DA DAG
 # ══════════════════════════════════════════════════════════════
 default_args = {
-    "retries": 5,                          # tenta 2x antes de desistir
-    "retry_delay": timedelta(minutes=10),   # espera 10 min entre tentativas
+    "retries": 2,                          # tenta 2x antes de desistir
+    "retry_delay": timedelta(minutes=5),   # espera 5 min entre tentativas
 }
 
 with DAG(
-    dag_id="orpen_r1",
+    dag_id="etl_orpen_r1",
     start_date=datetime(2026, 1, 1),
-    schedule="0 6,12 * * *",     # todo dia às 6h da manhã
+    schedule="0 6 * * *",     # todo dia às 6h da manhã
     catchup=False,
     default_args=default_args,
     tags=["etl", "orpen", "suporte"],
