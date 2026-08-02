@@ -41,15 +41,14 @@ def _get_orpen_config():
     }
 
 
-def _periodo_mes():
+def _periodo_7dias():
     """
-    Retorna (primeiro_dia, ultimo_dia) do período a processar.
-    Início = dia 1 do mês. Fim = HOJE (não busca dias futuros do mês,
-    que ainda não têm atendimentos e fariam a API retornar vazio).
+    Retorna (data_inicial, data_final) do período a processar.
+    Pega os ÚLTIMOS 7 DIAS (de 6 dias atrás até hoje).
     """
     hoje = datetime.today()
-    inicio = hoje.replace(day=1)
-    fim = hoje   # até hoje, não até o fim do mês
+    inicio = hoje - timedelta(days=6)   # 6 dias atrás + hoje = 7 dias
+    fim = hoje
     return inicio, fim
 
 
@@ -57,8 +56,8 @@ def _periodo_mes():
 # ETAPA 1 — apagar o período atual no banco
 # ══════════════════════════════════════════════════════════════
 def limpar_periodo():
-    inicio, fim = _periodo_mes()
-    print(f"Limpando período: {inicio.date()} até {fim.date()}")
+    inicio, fim = _periodo_7dias()
+    print(f"Limpando período (últimos 7 dias): {inicio.date()} até {fim.date()}")
 
     conn = utils.get_conn_dw_safepar()
     cursor = conn.cursor()
@@ -78,7 +77,7 @@ def limpar_periodo():
 # ETAPA 2 — buscar da API dia a dia e inserir no banco
 # ══════════════════════════════════════════════════════════════
 def extrair_e_carregar():
-    inicio, fim = _periodo_mes()
+    inicio, fim = _periodo_7dias()
     cfg = _get_orpen_config()
 
     conn = utils.get_conn_dw_safepar()
@@ -136,7 +135,7 @@ def extrair_e_carregar():
     conn.close()
 
     print("-" * 50)
-    print(f"Total inserido no mês: {total_inserido} linhas")
+    print(f"Total inserido: {total_inserido} linhas")
 
     # Se algum dia falhou, derruba a tarefa no final para ficar visível
     if dias_com_erro:
