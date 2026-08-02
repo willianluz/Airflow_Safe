@@ -260,7 +260,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id="etl_chat_whats",
+    dag_id="etl_orpen_97",
     start_date=datetime(2026, 1, 1),
     schedule="0 6 * * *",     # todo dia às 6h
     catchup=False,
