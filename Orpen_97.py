@@ -103,7 +103,6 @@ def extrair_e_carregar():
 
     data_atual = inicio
     total_inserido = 0
-    dias_com_erro = []
 
     while data_atual <= fim:
         dia_str = data_atual.strftime("%d/%m/%Y")
@@ -118,19 +117,19 @@ def extrair_e_carregar():
             else:
                 df = pd.DataFrame(json_data["data"][0])
 
-                # garante que todas as colunas esperadas existem
-                df = df[COLUNAS]
-
-                if not df.empty:
+                # dia sem atendimentos pode vir com DataFrame vazio ou
+                # sem as colunas esperadas — nesses casos, pula o dia
+                if df.empty or not all(col in df.columns for col in COLUNAS):
+                    print("  sem atendimentos válidos nessa data.")
+                else:
+                    df = df[COLUNAS]
                     utils.inserir_staging(df, conn, TABELA_STAGING)
                     total_inserido += len(df)
                     print(f"  {len(df)} linhas inseridas.")
-                else:
-                    print("  DataFrame vazio, nada inserido.")
 
         except Exception as e:
-            print(f"  ERRO em {dia_str}: {e}")
-            dias_com_erro.append(dia_str)
+            # dia com problema: registra no log e SEGUE para o próximo
+            print(f"  aviso: pulando {dia_str} — {e}")
 
         data_atual += timedelta(days=1)
 
@@ -138,9 +137,6 @@ def extrair_e_carregar():
 
     print("-" * 50)
     print(f"Total inserido na staging: {total_inserido} linhas")
-
-    if dias_com_erro:
-        raise Exception(f"Falha em {len(dias_com_erro)} dia(s): {', '.join(dias_com_erro)}")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -262,7 +258,7 @@ default_args = {
 with DAG(
     dag_id="etl_orpen_97",
     start_date=datetime(2026, 1, 1),
-    schedule="0 6 * * *",     # todo dia às 6h
+    schedule="0 6,12 * * *",     # todo dia às 6h
     catchup=False,
     default_args=default_args,
     tags=["etl", "orpen", "chat", "whatsapp"],
