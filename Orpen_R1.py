@@ -153,7 +153,7 @@ default_args = {
 with DAG(
     dag_id="etl_orpen_r1",
     start_date=datetime(2026, 1, 1),
-    schedule="0 6 * * *",     # todo dia às 6h da manhã
+    schedule="0 6,12 * * *",     # todo dia às 6h da manhã
     catchup=False,
     default_args=default_args,
     tags=["etl", "orpen", "suporte"],
